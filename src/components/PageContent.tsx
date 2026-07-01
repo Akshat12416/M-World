@@ -94,22 +94,14 @@ export default function PageContent() {
       const tl = getMasterTimeline();
       // Master timeline handles the 3D canvas and bg-sweep independently.
 
-      // 1. Fade out Hero content on very first scroll
-      gsap.to('.hero-content-wrapper', {
-        opacity: 0, y: -40,
-        scrollTrigger: {
-          trigger: '.page-wrapper',
-          start: 'top top',
-          end: '+=200', // scrubs over the first 200px of scrolling
-          scrub: true
-        }
-      });
+      // 1. We will fade out the Hero content on the master timeline instead of a separate scroll trigger
+      // to ensure it perfectly syncs with the background sweep.
 
       // 2. Turn Header text black on very first scroll
-      gsap.fromTo('.header-text', 
-        { color: '#F0EDE8' }, 
-        { 
-          color: '#111113', 
+      gsap.fromTo('.header-text',
+        { color: '#F0EDE8' },
+        {
+          color: '#111113',
           ease: 'power2.inOut',
           scrollTrigger: {
             trigger: '.page-wrapper',
@@ -120,27 +112,17 @@ export default function PageContent() {
         }
       );
 
-      // 3. Reveal Reframe text with wipe up animation after sweep finishes
-      gsap.fromTo('.reframe-content', 
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1, 
-          y: 0,
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: '.page-wrapper',
-            start: '300px top', // Triggers exactly when the white sweep completes
-            toggleActions: 'play reverse play reverse'
-          }
-        }
-      );
-
       if (tl) {
-        // At LABELS.problem, fade out Reframe text completely while camera sweeps
-        // We animate the parent container so it doesn't fight with the independent wipe-up trigger on .reframe-content
-        tl.to('#reframe .container', { opacity: 0, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
+        // Fade out hero text smoothly between 0 and LABELS.reframe (0.5) so it's gone before the sweep finishes
+        tl.to('.hero-content-wrapper', { opacity: 0, y: -40, duration: 0.5, ease: 'power2.inOut' }, 0);
+
+        // At LABELS.reframe, instantly show Reframe text (corresponds to Screenshot 1)
+        tl.to('.reframe-content', { opacity: 1, y: 0, duration: 0.01 }, LABELS.reframe);
         
+        // At LABELS.problem, instantly hide Reframe text (corresponds to Screenshot 2)
+        tl.to('.reframe-content', { opacity: 0, duration: 0.01 }, LABELS.problem);
+        tl.to('#reframe .container', { opacity: 0, duration: 0.01 }, LABELS.problem);
+
         // The camera sweep takes 1s. Then the pillar scales for 1s. Total = 2s.
         // Wait until BOTH are completely finished before fading in the Problem text.
         tl.fromTo('.problem-content', { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
@@ -157,19 +139,19 @@ export default function PageContent() {
             trigger: row, start: 'top center', end: 'bottom center',
             onEnter: () => {
               gsap.to(row, { opacity: 1, duration: 0.3 });
-              if(h3) gsap.to(h3, { color: 'var(--accent)', duration: 0.3 });
+              if (h3) gsap.to(h3, { color: 'var(--accent)', duration: 0.3 });
             },
             onLeave: () => {
               gsap.to(row, { opacity: 0.3, duration: 0.3 });
-              if(h3) gsap.to(h3, { color: 'var(--ink-dark)', duration: 0.3 });
+              if (h3) gsap.to(h3, { color: 'var(--ink-dark)', duration: 0.3 });
             },
             onEnterBack: () => {
               gsap.to(row, { opacity: 1, duration: 0.3 });
-              if(h3) gsap.to(h3, { color: 'var(--accent)', duration: 0.3 });
+              if (h3) gsap.to(h3, { color: 'var(--accent)', duration: 0.3 });
             },
             onLeaveBack: () => {
               gsap.to(row, { opacity: 0.3, duration: 0.3 });
-              if(h3) gsap.to(h3, { color: 'var(--ink-dark)', duration: 0.3 });
+              if (h3) gsap.to(h3, { color: 'var(--ink-dark)', duration: 0.3 });
             },
           }
         });
@@ -200,9 +182,9 @@ export default function PageContent() {
     <div className="page-wrapper" style={{ position: 'relative', width: '100%', overflowX: 'hidden' }}>
       {/* NOISE OVERLAY DISABLED FOR DIAGNOSTIC */}
       <div className="noise-overlay" />
-      
+
       <Header />
-      
+
       {/* Background Sweep for Transition */}
       <div className="bg-sweep" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '0vh', backgroundColor: 'var(--bg-paper)', zIndex: -1 }} />
 

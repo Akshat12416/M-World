@@ -1,6 +1,6 @@
 export default function Problem() {
   return (
-    <section id="problem" className="section bg-paper" style={{ marginTop: '-150vh', pointerEvents: 'none', height: '150vh' }}>
+    <section id="problem" className="section bg-paper" style={{ position: 'relative', height: '150vh', pointerEvents: 'none' }}>
       <div className="container" style={{ position: 'sticky', top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100vh', pointerEvents: 'auto', justifyContent: 'center' }}>
         <div className="problem-content" style={{ opacity: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', textAlign: 'center', marginBottom: '4rem', maxWidth: '800px' }} className="problem-text">

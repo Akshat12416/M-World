@@ -27,6 +27,7 @@ export default function HeroPillars() {
   const groupRef = useRef<THREE.Group>(null);
   const meshesRef = useRef<THREE.Mesh[]>([]);
   const { camera, size } = useThree();
+  const sweepPlaneRef = useRef<THREE.Mesh>(null);
   const lookAtProxy = useRef(new THREE.Vector3(0, 1.5, 0));
 
   // Sweep uniform: drives the white-from-bottom effect on both background and pillars
@@ -128,8 +129,11 @@ export default function HeroPillars() {
       tl.to(groupRef.current.position, { x: 7.5, duration: 0.5, ease: 'power2.inOut' }, LABELS.hero);
 
       // --- PROBLEM TRANSITION ---
-      // Shift group so the first pillar is centered (it's locally at -4.2)
-      tl.to(groupRef.current.position, { x: 4.2, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
+      if (sweepPlaneRef.current) {
+        tl.set(sweepPlaneRef.current, { visible: false }, LABELS.problem);
+      }
+      // Shift group so the first pillar is centered (it's locally at -4.2, but group scale is 1.4)
+      tl.to(groupRef.current.position, { x: 4.2 * 1.4, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
 
       // Camera sweeps to look top-down at the first pillar
       // The first pillar top in world space: groupY + tallestHeight * groupScale = -6 + 5.5*1.4 = 1.7
@@ -208,7 +212,7 @@ export default function HeroPillars() {
       })}
 
       {/* Background sweep plane — sits behind the pillars */}
-      <mesh position={[0, 0, -15]} scale={[200, 200, 1]} material={bgSweepMaterial}>
+      <mesh ref={sweepPlaneRef} position={[0, 0, -15]} scale={[200, 200, 1]} material={bgSweepMaterial}>
         <planeGeometry />
       </mesh>
     </group>

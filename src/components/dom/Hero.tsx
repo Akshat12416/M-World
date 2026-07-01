@@ -20,13 +20,13 @@ export default function Hero() {
               fontWeight: 500
             }}
           >
-            The Operating System for Autonomous Organizations
+            Deploy an Organization. <br /> Not a Team.
           </h1>
           <p
             className="hero-subtitle"
             style={{ marginTop: '1.25rem', fontSize: '1.1rem', color: 'var(--ink-secondary)', fontWeight: 400 }}
           >
-            Intelligent agents coordinating seamlessly to drive your business forward.
+            See where your business stands today.
           </p>
 
         </div>

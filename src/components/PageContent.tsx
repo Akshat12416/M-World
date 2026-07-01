@@ -146,8 +146,42 @@ export default function PageContent() {
       // Total master timeline duration is 18. This maps perfectly to the same absolute scroll positions.
       domTl.to('.problem-content', { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 3);
       domTl.to('.problem-row', { autoAlpha: 1, y: 0, duration: 1, stagger: 0.1, ease: 'power2.out' }, 3);
-      domTl.to('.problem-content', { autoAlpha: 0, y: -20, duration: 0.5, ease: 'power2.in' }, 7);
-      domTl.to('.problem-row', { autoAlpha: 0, y: -20, duration: 0.5, stagger: 0.05, ease: 'power2.in' }, 7);
+
+      // Simulate scrolling: push the wrapper up further to account for 6 rows
+      domTl.to('.problem-scroll-wrapper', { y: '-130vh', duration: 3, ease: 'none' }, 4);
+
+      // --- Crossfade Magic to put Sphere in front of Table ---
+      // At time 4, the 3D orange pillar covers the screen. We crossfade to a DOM orange background.
+      domTl.to('.problem-bg-override', { opacity: 1, duration: 0.2, ease: 'none' }, 4);
+      // Once the 3D mesh is transparent (time 4.2), we pop the Canvas to z-index 2!
+      // This brings the Canvas (and the Sphere) IN FRONT of the table!
+      domTl.set('.canvas-wrapper', { zIndex: 2 }, 4.21);
+
+      // Highlight each row as the sphere passes over it
+      // With 6 rows and a -130vh scroll, the first row hits the center around time 4.4
+      const highlightStart = 4.4;
+      const highlightEnd = 6.6;
+      const highlightDuration = (highlightEnd - highlightStart) / 6;
+
+      for (let i = 0; i < 6; i++) {
+        const startTime = highlightStart + (i * highlightDuration);
+        
+        // Highlight ON (Solid Yellow background, black text)
+        // Since the sphere is now physically IN FRONT of the row, we don't need transparency!
+        domTl.to(`.problem-row-${i}`, { backgroundColor: '#F7D046', color: '#111113', duration: 0.15 }, startTime);
+        domTl.to(`.problem-row-${i} .problem-btn`, { borderColor: '#111113', duration: 0.15 }, startTime);
+        
+        // Highlight OFF (Back to transparent, white text)
+        domTl.to(`.problem-row-${i}`, { backgroundColor: 'transparent', color: 'var(--ink-primary)', duration: 0.15 }, startTime + highlightDuration);
+        domTl.to(`.problem-row-${i} .problem-btn`, { borderColor: 'rgba(255,255,255,0.4)', duration: 0.15 }, startTime + highlightDuration);
+      }
+
+      // Fade everything out before HowItWorks starts
+      domTl.to('.problem-scroll-wrapper', { autoAlpha: 0, y: '-140vh', duration: 0.5, ease: 'power2.in' }, 7.5);
+      
+      // Revert the Crossfade Magic before the next section
+      domTl.set('.canvas-wrapper', { zIndex: 0 }, 7.49);
+      domTl.to('.problem-bg-override', { opacity: 0, duration: 0.2, ease: 'none' }, 7.5);
       
       // CRITICAL: We must pad the end of this local timeline so its total duration is exactly 18,
       // identical to the masterTimeline. Otherwise GSAP stretches the 7.5s timeline across the whole page!
@@ -185,6 +219,9 @@ export default function PageContent() {
 
       {/* Background Sweep for Transition */}
       <div className="bg-sweep" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '0vh', backgroundColor: 'var(--bg-paper)', zIndex: -1 }} />
+
+      {/* DOM Orange Background for Problem section (allows canvas z-index to pop to front) */}
+      <div className="problem-bg-override" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', backgroundColor: '#E45B2E', zIndex: 0, opacity: 0, pointerEvents: 'none' }} />
 
       {/* 3D Canvas wrapper */}
       <div

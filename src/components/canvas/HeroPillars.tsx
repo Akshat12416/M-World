@@ -158,6 +158,14 @@ export default function HeroPillars() {
       // which looks like a black background being pulled up.
       tl.to(meshesRef.current[0].scale, { x: 120, y: 0.01, z: 120, duration: 1, ease: 'power2.inOut' }, `${LABELS.problem}+=1`);
 
+      // Crossfade the 3D orange mesh to transparent so the DOM background can take over.
+      // This allows us to move the canvas to z-index 2 (in front of the table) so the sphere rolls OVER the text!
+      const mat0 = meshesRef.current[0].material as THREE.MeshPhysicalMaterial;
+      tl.to(mat0, { opacity: 0, duration: 0.2, ease: 'none' }, `${LABELS.problem}+=2`); // Time 4.0
+      
+      // Crossfade the 3D orange mesh back to opaque before the next section
+      tl.to(mat0, { opacity: 1, duration: 0.2, ease: 'none' }, 7.5);
+
       // Hide the massive pillar at LABELS.vision so the background can return to black
       tl.to(meshesRef.current[0].material, { opacity: 0, transparent: true, duration: 1 }, LABELS.vision);
 

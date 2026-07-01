@@ -127,10 +127,27 @@ export default function PageContent() {
         // Turn Header text white when the orange background comes up
         tl.to('.header-text', { color: '#F0EDE8', duration: 1 }, LABELS.problem);
 
-        // Wait until orange background fills screen (LABELS.problem + 2) before fading in Problem text and list
-        tl.fromTo('.problem-content', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
-        tl.fromTo('.problem-row', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
+        // We handle problem text on a separate local timeline to avoid React Strict Mode race conditions
+        // with the global 3D master timeline being reset by the Canvas unmounting.
       }
+
+      // Local timeline perfectly mirrored to the master timeline's scroll position
+      // LABELS.problem is time 2, background scales at time 3 to 4. We fade in at time 3.
+      // LABELS.solution is time 6. We fade out at time 7.
+      const domTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '.page-wrapper',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1,
+        }
+      });
+
+      // Total master timeline duration is 18. This maps perfectly to the same absolute scroll positions.
+      domTl.to('.problem-content', { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, 3);
+      domTl.to('.problem-row', { autoAlpha: 1, y: 0, duration: 1, stagger: 0.1, ease: 'power2.out' }, 3);
+      domTl.to('.problem-content', { autoAlpha: 0, y: -20, duration: 0.5, ease: 'power2.in' }, 7);
+      domTl.to('.problem-row', { autoAlpha: 0, y: -20, duration: 0.5, stagger: 0.05, ease: 'power2.in' }, 7);
 
       // We remove the old Problem/Solution scroll triggers since it's all on masterTimeline now
 

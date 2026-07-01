@@ -95,6 +95,9 @@ export default function Node() {
       const pillarTopWorld = groupY + tallestHeight * groupScale;
       tl.to(mesh.position, { x: 0, y: pillarTopWorld + nodeRadius, z: 0, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
 
+      // ROLLING ANIMATION: As the table scrolls (time 4 to 7.5), the sphere physically rolls forward
+      tl.to(mesh.rotation, { x: `+=${Math.PI * 6}`, duration: 3.5, ease: 'none' }, 4);
+
       // 4. Solution section (bgCharcoal)
       tl.to(mesh.position, { y: 2, duration: 1 }, LABELS.solution)
 
@@ -128,7 +131,7 @@ export default function Node() {
   useFrame((_state, delta) => {
     if (!meshRef.current) return;
     meshRef.current.rotation.y += delta * 0.2;
-    meshRef.current.rotation.x += delta * 0.1;
+    // We removed rotation.x from the idle animation so GSAP can exclusively control the X-axis for the scrolling "roll" effect
   });
 
   return (

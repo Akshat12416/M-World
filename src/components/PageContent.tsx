@@ -158,9 +158,9 @@ export default function PageContent() {
       domTl.set('.canvas-wrapper', { zIndex: 2 }, 4.21);
 
       // Highlight each row as the sphere passes over it
-      // With 6 rows and a -130vh scroll, the first row hits the center around time 4.4
-      const highlightStart = 4.4;
-      const highlightEnd = 6.6;
+      // With 6 rows and a -130vh scroll, the first row hits the center around time 4.7
+      const highlightStart = 4.7;
+      const highlightEnd = 6.9;
       const highlightDuration = (highlightEnd - highlightStart) / 6;
 
       for (let i = 0; i < 6; i++) {

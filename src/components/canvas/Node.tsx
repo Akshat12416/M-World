@@ -21,9 +21,34 @@ const TOKENS = {
 };
 
 export default function Node() {
+  const positionGroupRef = useRef<THREE.Group>(null);
+  const rotationGroupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
   const { scene } = useThree();
+
+  const premiumEquatorTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Base white (tinted by the material's color)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 1024, 1024);
+    
+    // Sleek dark metallic band around the equator
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 490, 1024, 44);
+    
+    // Vibrant orange accent line in the very center
+    ctx.fillStyle = '#E8622A';
+    ctx.fillRect(0, 509, 1024, 6);
+    
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 16;
+    return tex;
+  }, []);
 
 
 
@@ -39,11 +64,13 @@ export default function Node() {
       const tl = getMasterTimeline();
       if (!tl) return;
 
+      const posGroup = positionGroupRef.current!;
+      const rotGroup = rotationGroupRef.current!;
       const mesh = meshRef.current!;
       const mat = materialRef.current!;
 
       const nodeRadius = 0.75;
-      gsap.set(mesh.scale, { x: nodeRadius, y: nodeRadius, z: nodeRadius });
+      gsap.set(posGroup.scale, { x: nodeRadius, y: nodeRadius, z: nodeRadius });
 
       // The pillar group has position y=-6 and scale 1.4
       // So world position = groupY + localY * groupScale
@@ -54,7 +81,7 @@ export default function Node() {
       const getPillarTopWorldY = (i: number) => groupY + ORDERED_HEIGHTS[i] * groupScale + nodeRadius;
       const getPillarWorldX = (i: number) => getOrderedX(i) * groupScale;
 
-      gsap.set(mesh.position, {
+      gsap.set(posGroup.position, {
         x: getPillarWorldX(0), 
         y: getPillarTopWorldY(0),
         z: 0
@@ -75,7 +102,7 @@ export default function Node() {
       
       // Animate the document body background for sections below the canvas
       const bgProxy = { color: TOKENS.bgVoid };
-      tl.fromTo(mesh.position, 
+      tl.fromTo(posGroup.position, 
           { x: initialX, y: getPillarTopWorldY(0), z: 0 },
           { x: targetX, y: targetY, z: 0, duration: 0.5, ease: 'power2.inOut' }, 
           LABELS.hero
@@ -93,16 +120,26 @@ export default function Node() {
       // The pillar group shifts so first pillar is centered. Its top in world space:
       // groupY + tallestHeight * groupScale = -6 + 7.5 * 1.4 = 4.5
       const pillarTopWorld = groupY + tallestHeight * groupScale;
-      tl.to(mesh.position, { x: 0, y: pillarTopWorld + nodeRadius, z: 0, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
-
-      // ROLLING ANIMATION: As the table scrolls (time 4 to 7.5), the sphere physically rolls forward
-      tl.to(mesh.rotation, { x: `+=${Math.PI * 6}`, duration: 3.5, ease: 'none' }, 4);
+      tl.fromTo(posGroup.position, 
+        { x: targetX, y: targetY, z: 0 },
+        { x: 0, y: pillarTopWorld + nodeRadius, z: 0, duration: 1, ease: 'power2.inOut' }, 
+        LABELS.problem
+      );
 
       // 4. Solution section (bgCharcoal)
-      tl.to(mesh.position, { y: 2, duration: 1 }, LABELS.solution)
+      // Delayed to 7.5 so the sphere stays perfectly in the center of the screen while the table scrolls!
+      tl.fromTo(posGroup.position, 
+        { x: 0, y: pillarTopWorld + nodeRadius, z: 0 },
+        { x: 0, y: 2, z: 0, duration: 1 }, 
+        7.5
+      );
 
       // 4. Solution -> 5. How It Works (Path Travel) (bgCharcoal -> bgPaper)
-      tl.to(mesh.position, { x: 0, y: 5, z: -5, duration: 0.5 }, LABELS.howItWorks)
+      tl.fromTo(posGroup.position, 
+        { x: 0, y: 2, z: 0 },
+        { x: 0, y: 5, z: -5, duration: 0.5 }, 
+        LABELS.howItWorks
+      );
 
       // 5. How It Works -> 6. Vision (Multiply & Converge) (bgPaper -> bgVoid)
       tl.to(bgProxy, {
@@ -112,14 +149,27 @@ export default function Node() {
             document.body.style.backgroundColor = bgProxy.color;
           }
         }, LABELS.vision)
-        .to(mesh.position, { x: 0, y: 0, z: -10, duration: 1 }, LABELS.vision)
-        .to(mesh.scale, { x: 3, y: 3, z: 3, duration: 1 }, LABELS.vision)
+        .fromTo(posGroup.position, { x: 0, y: 5, z: -5 }, { x: 0, y: 0, z: -10, duration: 1 }, LABELS.vision)
+        .to(posGroup.scale, { x: 3, y: 3, z: 3, duration: 1 }, LABELS.vision)
         .to(mat, { emissiveIntensity: 1, duration: 0.5, yoyo: true, repeat: 1 }, `${LABELS.vision}+=0.2`)
 
       // 6. Vision -> 7. CTA (bgVoid)
-      tl.to(mesh.position, { x: 0, y: 0, z: 0, duration: 1 }, LABELS.cta)
-        .to(mesh.scale, { x: 0.6, y: 0.6, z: 0.6, duration: 1 }, LABELS.cta)
+      tl.fromTo(posGroup.position, { x: 0, y: 0, z: -10 }, { x: 0, y: 0, z: 0, duration: 1 }, LABELS.cta)
+        .to(posGroup.scale, { x: 0.6, y: 0.6, z: 0.6, duration: 1 }, LABELS.cta)
         .to(mat, { emissiveIntensity: 0.3, duration: 1 }, LABELS.cta)
+        
+      // CONTINUOUS SCROLL ROLLING:
+      // Trigger strictly on the '#problem' section so it does NOT roll while resting on the pillar in sections 1 & 2!
+      gsap.to(rotGroup.rotation, {
+        x: Math.PI * 6, // Pure top-to-down roll precisely matching the section length
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '#problem',
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+        }
+      });
     });
 
     return () => {
@@ -130,26 +180,31 @@ export default function Node() {
 
   useFrame((_state, delta) => {
     if (!meshRef.current) return;
-    meshRef.current.rotation.y += delta * 0.2;
-    // We removed rotation.x from the idle animation so GSAP can exclusively control the X-axis for the scrolling "roll" effect
+    // Removed idle rotation on Y axis so it doesn't spin "sideways" like a steering wheel when viewed from top-down
   });
 
   return (
-    <>
-      <mesh ref={meshRef} position={[-4.515, -1.66, 0]}>
-        <sphereGeometry args={[1, 64, 64]} />
-        <meshPhysicalMaterial
-          ref={materialRef}
-          color="#D8D4CC"
-          emissive="#000000"
-          emissiveIntensity={0}
-          roughness={0.08}
-          metalness={0.95}
-          transmission={0.9}
-          thickness={1.5}
-          clearcoat={0.1}
-        />
-      </mesh>
-    </>
+    <group ref={positionGroupRef}>
+      <group ref={rotationGroupRef}>
+        {/* The Premium Metallic Sphere: 
+            Restored the flawless glass sphere. We apply a sleek, procedural equatorial texture map 
+            to explicitly show the top-to-down rotation without resorting to disco-ball facets! */}
+        <mesh ref={meshRef}>
+          <sphereGeometry args={[1, 64, 64]} />
+          <meshPhysicalMaterial
+            ref={materialRef}
+            map={premiumEquatorTexture}
+            color="#D8D4CC"
+            emissive="#000000"
+            emissiveIntensity={0}
+            roughness={0.08}
+            metalness={0.95}
+            transmission={0.9}
+            thickness={1.5}
+            clearcoat={0.1}
+          />
+        </mesh>
+      </group>
+    </group>
   );
 }

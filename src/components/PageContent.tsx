@@ -148,6 +148,10 @@ export default function PageContent() {
       domTl.to('.problem-row', { autoAlpha: 1, y: 0, duration: 1, stagger: 0.1, ease: 'power2.out' }, 3);
       domTl.to('.problem-content', { autoAlpha: 0, y: -20, duration: 0.5, ease: 'power2.in' }, 7);
       domTl.to('.problem-row', { autoAlpha: 0, y: -20, duration: 0.5, stagger: 0.05, ease: 'power2.in' }, 7);
+      
+      // CRITICAL: We must pad the end of this local timeline so its total duration is exactly 18,
+      // identical to the masterTimeline. Otherwise GSAP stretches the 7.5s timeline across the whole page!
+      domTl.set({}, {}, 18);
 
       // We remove the old Problem/Solution scroll triggers since it's all on masterTimeline now
 

@@ -20,7 +20,7 @@ export default function Scene() {
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
       onCreated={({ gl, camera }) => {
-        camera.lookAt(new THREE.Vector3(0, -0.5, 0));
+        camera.lookAt(new THREE.Vector3(0, 1.5, 0));
         camera.updateProjectionMatrix();
         gl.setClearColor('#0A0A0B', 0); // MUST HAVE ALPHA 0 to allow HTML background sweep to show through
         gl.outputColorSpace = THREE.SRGBColorSpace;

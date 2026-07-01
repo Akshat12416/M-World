@@ -58,14 +58,18 @@ export default function Node() {
       const nodeRadius = 0.75;
       gsap.set(mesh.scale, { x: nodeRadius, y: nodeRadius, z: nodeRadius });
 
-      // Spawn on the first pillar
-      // HeroPillars group is at y: -9.5 with scale 1.4. Pillar top local is ORDERED_HEIGHTS[i].
-      // Absolute Y = -9.5 + (ORDERED_HEIGHTS[i] * 1.4) + nodeRadius
-      const getPillarTopY = (i: number) => -9.5 + (ORDERED_HEIGHTS[i] * 1.4) + nodeRadius;
+      // The pillar group has position y=-6 and scale 1.4
+      // So world position = groupY + localY * groupScale
+      const groupY = -6;
+      const groupScale = 1.4;
+      
+      // Spawn on the first pillar — nodeRadius is NOT scaled by groupScale since the sphere is outside the group
+      const getPillarTopWorldY = (i: number) => groupY + ORDERED_HEIGHTS[i] * groupScale + nodeRadius;
+      const getPillarWorldX = (i: number) => getOrderedX(i) * groupScale;
 
       gsap.set(mesh.position, {
-        x: getOrderedX(0) * 1.4, // Account for group scale 
-        y: getPillarTopY(0),
+        x: getPillarWorldX(0), 
+        y: getPillarTopWorldY(0),
         z: 0
       });
 
@@ -75,27 +79,34 @@ export default function Node() {
 
       // 2. Reframe -> 3. Problem (bgVoid -> bgPaper)
       // First pillar becomes the tallest. Node rides it up and shifts right with the group.
+      // After reverse, pillar 0 gets the tallest height (ORDERED_HEIGHTS[PILLAR_COUNT-1])
       const tallestHeight = ORDERED_HEIGHTS[PILLAR_COUNT - 1];
-      const targetY = -9.5 + (tallestHeight * 1.4) + nodeRadius;
+      const targetY = groupY + tallestHeight * groupScale + nodeRadius;
       
-      const initialX = getOrderedX(0) * 1.4;
-      const targetX = initialX + 7.5; // Shift right by exactly the same amount as the pillar group
+      const initialX = getPillarWorldX(0);
+      const targetX = initialX + 7.5; // Shift right by the same world-space amount as the pillar group
       
-      const bgProxySweep = { height: 0 };
-      tl.to(mesh.position, { x: targetX, y: targetY, duration: 1, ease: 'power2.inOut' }, LABELS.hero)
-        // Animate the sweep element reliably via proxy
-        .to(bgProxySweep, {
-          height: 100,
-          duration: 1,
+      // Animate the document body background for sections below the canvas
+      const bgProxy = { color: TOKENS.bgVoid };
+      tl.fromTo(mesh.position, 
+          { x: initialX, y: getPillarTopWorldY(0), z: 0 },
+          { x: targetX, y: targetY, z: 0, duration: 0.5, ease: 'power2.inOut' }, 
+          LABELS.hero
+        )
+        .to(bgProxy, {
+          color: TOKENS.bgPaper,
+          duration: 0.5,
           ease: 'power2.inOut',
           onUpdate: () => {
-            const el = document.querySelector('.bg-sweep') as HTMLElement;
-            if (el) el.style.height = `${bgProxySweep.height}vh`;
+            document.body.style.backgroundColor = bgProxy.color;
           }
         }, LABELS.hero);
 
-      // 3. Problem -> 4. Solution (bgPaper)
-      // Node stays on top of the pillar.
+      // 3. Problem transition (Camera sweep to top-down)
+      // The pillar group shifts so first pillar is centered. Its top in world space:
+      // groupY + tallestHeight * groupScale = -6 + 7.5 * 1.4 = 4.5
+      const pillarTopWorld = groupY + tallestHeight * groupScale;
+      tl.to(mesh.position, { x: 0, y: pillarTopWorld + nodeRadius, z: 0, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
 
       // 4. Solution section (bgCharcoal)
       tl.to(mesh.position, { y: 2, duration: 1 }, LABELS.solution)
@@ -105,13 +116,17 @@ export default function Node() {
         .call(() => { activePath.current = true; }, undefined, LABELS.howItWorks)
         .to(lineMat, { opacity: 0.2, duration: 0.2 }, LABELS.howItWorks)
         .to(pathProgress.current, { value: 1, duration: 2 }, LABELS.howItWorks)
-        // HowItWorks stays on the white background from the sweep
         .call(() => { activePath.current = false; }, undefined, `${LABELS.howItWorks}+=2`)
         .to(lineMat, { opacity: 0, duration: 0.2 }, `${LABELS.howItWorks}+=2`)
 
       // 5. How It Works -> 6. Vision (Multiply & Converge) (bgPaper -> bgVoid)
-      // Fade out the sweep to reveal the underlying bgVoid again
-      tl.to('.bg-sweep', { opacity: 0, duration: 1 }, LABELS.vision)
+      tl.to(bgProxy, {
+          color: TOKENS.bgVoid,
+          duration: 1,
+          onUpdate: () => {
+            document.body.style.backgroundColor = bgProxy.color;
+          }
+        }, LABELS.vision)
         .to(mesh.position, { x: 0, y: 0, z: -10, duration: 1 }, LABELS.vision)
         .to(mesh.scale, { x: 3, y: 3, z: 3, duration: 1 }, LABELS.vision)
         .to(mat, { emissiveIntensity: 1, duration: 0.5, yoyo: true, repeat: 1 }, `${LABELS.vision}+=0.2`)

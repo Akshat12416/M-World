@@ -120,21 +120,34 @@ export default function PageContent() {
         }
       );
 
-      // 3. Reveal Reframe text instantly after sweep finishes
-      gsap.to('.reframe-content', {
-        opacity: 1, 
-        duration: 0.01, // Pop in instantly
-        scrollTrigger: {
-          trigger: '.page-wrapper',
-          start: '300px top', // Triggers exactly when the white sweep completes
-          toggleActions: 'play reverse play reverse'
+      // 3. Reveal Reframe text with wipe up animation after sweep finishes
+      gsap.fromTo('.reframe-content', 
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1, 
+          y: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: '.page-wrapper',
+            start: '300px top', // Triggers exactly when the white sweep completes
+            toggleActions: 'play reverse play reverse'
+          }
         }
-      });
+      );
 
-      gsap.to('.problem-text, .problem-diagram', {
-        scrollTrigger: { trigger: '#problem', start: 'top 60%' },
-        opacity: 1, y: 0, duration: 1, stagger: 0.3, ease: 'power3.out'
-      });
+      if (tl) {
+        // At LABELS.problem, fade out Reframe text completely while camera sweeps
+        // We animate the parent container so it doesn't fight with the independent wipe-up trigger on .reframe-content
+        tl.to('#reframe .container', { opacity: 0, duration: 1, ease: 'power2.inOut' }, LABELS.problem);
+        
+        // The camera sweep takes 1s. Then the pillar scales for 1s. Total = 2s.
+        // Wait until BOTH are completely finished before fading in the Problem text.
+        tl.fromTo('.problem-content', { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
+      }
+
+      // We remove the old Problem scroll trigger since it's now on masterTimeline
+      // gsapt.to('.problem-text, .problem-diagram' ...);
 
       const solutionRows = gsap.utils.toArray('.solution-row');
       solutionRows.forEach((row: any) => {

@@ -35,7 +35,7 @@ export const getMasterTimeline = () => {
     // and happens almost immediately after scrolling begins.
     masterTimeline.addLabel(LABELS.hero, 0)
                   .addLabel(LABELS.reframe, 0.5) 
-                  .addLabel(LABELS.problem, 3)
+                  .addLabel(LABELS.problem, 2)
                   .addLabel(LABELS.solution, 6)
                   .addLabel(LABELS.howItWorks, 9)
                   .addLabel(LABELS.vision, 14)

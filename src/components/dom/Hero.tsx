@@ -32,22 +32,7 @@ export default function Hero() {
         </div>
 
         {/* Scroll Down Cue */}
-        <div className="scroll-cue" style={{
-          position: 'absolute',
-          bottom: '2rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '0.75rem',
-          zIndex: 10
-        }}>
-          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-secondary)' }}>
 
-          </span>
-          <div style={{ width: '1px', height: '40px', background: 'linear-gradient(to bottom, var(--ink-secondary), transparent)' }} />
-        </div>
       </div>
     </section>
   );

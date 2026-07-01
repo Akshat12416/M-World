@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Line } from '@react-three/drei';
+import { Environment } from '@react-three/drei';
 import { getMasterTimeline, LABELS } from '@/lib/animations';
 import { PILLAR_COUNT, getOrderedX, getOrderedZ, ORDERED_HEIGHTS } from './HeroPillars';
 
@@ -23,21 +23,9 @@ const TOKENS = {
 export default function Node() {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
-  const lineRef = useRef<any>(null);
-  const pathProgress = useRef({ value: 0 });
-  const activePath = useRef(false);
   const { scene } = useThree();
 
-  const curve = useMemo(() => {
-    return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 5, -5),
-      new THREE.Vector3(2, 0, -2),
-      new THREE.Vector3(-2, -5, 0),
-      new THREE.Vector3(0, -10, 2)
-    ]);
-  }, []);
 
-  const curvePoints = useMemo(() => curve.getPoints(50), [curve]);
 
   useEffect(() => {
     if (!meshRef.current) return;
@@ -53,7 +41,6 @@ export default function Node() {
 
       const mesh = meshRef.current!;
       const mat = materialRef.current!;
-      const lineMat = lineRef.current?.material;
 
       const nodeRadius = 0.75;
       gsap.set(mesh.scale, { x: nodeRadius, y: nodeRadius, z: nodeRadius });
@@ -113,11 +100,6 @@ export default function Node() {
 
       // 4. Solution -> 5. How It Works (Path Travel) (bgCharcoal -> bgPaper)
       tl.to(mesh.position, { x: 0, y: 5, z: -5, duration: 0.5 }, LABELS.howItWorks)
-        .call(() => { activePath.current = true; }, undefined, LABELS.howItWorks)
-        .to(lineMat, { opacity: 0.2, duration: 0.2 }, LABELS.howItWorks)
-        .to(pathProgress.current, { value: 1, duration: 2 }, LABELS.howItWorks)
-        .call(() => { activePath.current = false; }, undefined, `${LABELS.howItWorks}+=2`)
-        .to(lineMat, { opacity: 0, duration: 0.2 }, `${LABELS.howItWorks}+=2`)
 
       // 5. How It Works -> 6. Vision (Multiply & Converge) (bgPaper -> bgVoid)
       tl.to(bgProxy, {
@@ -141,16 +123,12 @@ export default function Node() {
       ctx.revert();
       scene.background = null;
     };
-  }, [curve, scene]);
+  }, [scene]);
 
   useFrame((_state, delta) => {
     if (!meshRef.current) return;
     meshRef.current.rotation.y += delta * 0.2;
     meshRef.current.rotation.x += delta * 0.1;
-
-    if (activePath.current && pathProgress.current.value > 0) {
-      curve.getPoint(pathProgress.current.value, meshRef.current.position);
-    }
   });
 
   return (
@@ -169,15 +147,6 @@ export default function Node() {
           clearcoat={0.1}
         />
       </mesh>
-
-      <Line
-        ref={lineRef}
-        points={curvePoints}
-        color="#D8DEE8"
-        lineWidth={1.5}
-        transparent
-        opacity={0} // Start hidden
-      />
     </>
   );
 }

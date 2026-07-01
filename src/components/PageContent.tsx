@@ -9,9 +9,8 @@ import { useStore } from '@/lib/store';
 import Scene from '@/components/canvas/Scene';
 import Hero from '@/components/dom/Hero';
 import Reframe from '@/components/dom/Reframe';
-import Problem from '@/components/dom/Problem';
-import Solution from '@/components/dom/Solution';
-import HowItWorks from '@/components/dom/HowItWorks';
+import Problem from './dom/Problem';
+import HowItWorks from './dom/HowItWorks';
 import Vision from '@/components/dom/Vision';
 import CTA from '@/components/dom/CTA';
 import NodeFallback from '@/components/dom/NodeFallback';
@@ -84,7 +83,9 @@ export default function PageContent() {
 
     const ctx = gsap.context(() => {
       gsap.set('.hero-title, .hero-subtitle, .scroll-cue, .hero-cta', { opacity: 0, y: 20 });
-      gsap.set('.problem-text, .problem-diagram, .step, .cta-button', { opacity: 0, y: 30 });
+      gsap.set('.step, .cta-button', { opacity: 0, y: 30 });
+      gsap.set('.problem-content, .problem-row', { autoAlpha: 0, y: 20 });
+      gsap.set('.reframe-content', { autoAlpha: 0 });
       gsap.set('.vision-text', { opacity: 0, scale: 0.95 });
 
       gsap.to('.hero-title, .hero-subtitle, .scroll-cue, .hero-cta', {
@@ -114,48 +115,24 @@ export default function PageContent() {
 
       if (tl) {
         // Fade out hero text smoothly between 0 and LABELS.reframe (0.5) so it's gone before the sweep finishes
-        tl.to('.hero-content-wrapper', { opacity: 0, y: -40, duration: 0.5, ease: 'power2.inOut' }, 0);
+        tl.to('.hero-content-wrapper', { autoAlpha: 0, y: -40, duration: 0.5, ease: 'power2.inOut' }, 0);
 
         // At LABELS.reframe, instantly show Reframe text (corresponds to Screenshot 1)
-        tl.to('.reframe-content', { opacity: 1, y: 0, duration: 0.01 }, LABELS.reframe);
+        tl.to('.reframe-content', { autoAlpha: 1, y: 0, duration: 0.01 }, LABELS.reframe);
         
         // At LABELS.problem, instantly hide Reframe text (corresponds to Screenshot 2)
-        tl.to('.reframe-content', { opacity: 0, duration: 0.01 }, LABELS.problem);
-        tl.to('#reframe .container', { opacity: 0, duration: 0.01 }, LABELS.problem);
+        tl.to('.reframe-content', { autoAlpha: 0, duration: 0.01 }, LABELS.problem);
+        tl.to('#reframe .container', { autoAlpha: 0, duration: 0.01 }, LABELS.problem);
+        
+        // Turn Header text white when the orange background comes up
+        tl.to('.header-text', { color: '#F0EDE8', duration: 1 }, LABELS.problem);
 
-        // The camera sweep takes 1s. Then the pillar scales for 1s. Total = 2s.
-        // Wait until BOTH are completely finished before fading in the Problem text.
-        tl.fromTo('.problem-content', { opacity: 0 }, { opacity: 1, duration: 1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
+        // Wait until orange background fills screen (LABELS.problem + 2) before fading in Problem text and list
+        tl.fromTo('.problem-content', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
+        tl.fromTo('.problem-row', { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.1, ease: 'power2.out' }, `${LABELS.problem}+=2`);
       }
 
-      // We remove the old Problem scroll trigger since it's now on masterTimeline
-      // gsapt.to('.problem-text, .problem-diagram' ...);
-
-      const solutionRows = gsap.utils.toArray('.solution-row');
-      solutionRows.forEach((row: any) => {
-        const h3 = row.querySelector('h3');
-        gsap.to(row, {
-          scrollTrigger: {
-            trigger: row, start: 'top center', end: 'bottom center',
-            onEnter: () => {
-              gsap.to(row, { opacity: 1, duration: 0.3 });
-              if (h3) gsap.to(h3, { color: 'var(--accent)', duration: 0.3 });
-            },
-            onLeave: () => {
-              gsap.to(row, { opacity: 0.3, duration: 0.3 });
-              if (h3) gsap.to(h3, { color: 'var(--ink-dark)', duration: 0.3 });
-            },
-            onEnterBack: () => {
-              gsap.to(row, { opacity: 1, duration: 0.3 });
-              if (h3) gsap.to(h3, { color: 'var(--accent)', duration: 0.3 });
-            },
-            onLeaveBack: () => {
-              gsap.to(row, { opacity: 0.3, duration: 0.3 });
-              if (h3) gsap.to(h3, { color: 'var(--ink-dark)', duration: 0.3 });
-            },
-          }
-        });
-      });
+      // We remove the old Problem/Solution scroll triggers since it's all on masterTimeline now
 
       gsap.to('.step', {
         scrollTrigger: { trigger: '#how-it-works', start: 'top 40%' },
@@ -210,7 +187,6 @@ export default function PageContent() {
         <Hero />
         <Reframe />
         <Problem />
-        <Solution />
         <HowItWorks />
         <Vision />
         <CTA />
